@@ -224,7 +224,14 @@ local function nodeIndex(self, key)
 	if type(key) == "number" then
 		return self._children[key]
 	end
-	return Node[key]
+	local method = Node[key]
+	if method ~= nil then
+		return method
+	end
+	if self.Parent == nil then
+		return self._references[key]
+	end
+	return nil
 end
 
 local function newNode(root, parentNode, frame, surface)
@@ -236,6 +243,7 @@ local function newNode(root, parentNode, frame, surface)
 		_components = {},
 		_connections = {},
 		_managed = {},
+		_referenceNames = {},
 		_destroyed = false,
 		_surface = surface == true,
 	}, { __index = nodeIndex })
@@ -323,6 +331,51 @@ function Node:GetPath()
 	return #parts == 0 and "root" or "root[" .. table.concat(parts, "][") .. "]"
 end
 
+function Node:Reference(name)
+	assert(not self._destroyed, "FSSFrontend: cannot reference a destroyed node")
+	assert(type(name) == "string" and name ~= "", "FSSFrontend: reference name must be a non-empty string")
+
+	local root = self._root
+	assert(Node[name] == nil, string.format("FSSFrontend: reference name %q conflicts with a region method", name))
+	assert(
+		rawget(root, name) == nil,
+		string.format("FSSFrontend: reference name %q conflicts with an internal field", name)
+	)
+
+	local existing = root._references[name]
+	assert(
+		existing == nil or existing == self,
+		string.format("FSSFrontend: reference name %q is already assigned to %s", name, existing:GetPath())
+	)
+	root._references[name] = self
+	self._referenceNames[name] = true
+	return self
+end
+
+function Node:GetReference(name)
+	assert(self.Parent == nil, "FSSFrontend: GetReference must be called on the root UI")
+	return self._references[name]
+end
+
+function Node:Unreference(name)
+	if name ~= nil then
+		assert(type(name) == "string", "FSSFrontend: reference name must be a string")
+		if self._root._references[name] == self then
+			self._root._references[name] = nil
+			self._referenceNames[name] = nil
+		end
+		return self
+	end
+
+	for referenceName in pairs(self._referenceNames) do
+		if self._root._references[referenceName] == self then
+			self._root._references[referenceName] = nil
+		end
+	end
+	table.clear(self._referenceNames)
+	return self
+end
+
 function Node:Style(properties)
 	applyProperties(self.Gui, properties, true)
 	return self
@@ -368,6 +421,7 @@ function Node:Destroy()
 		return
 	end
 	self._destroyed = true
+	self:Unreference()
 	self:Clear()
 	disconnectAll(self._connections)
 	self._root._nodes[self] = nil
@@ -1054,6 +1108,7 @@ function UIModule:Create(options)
 	local root = newNode(nil, nil, rootFrame, false)
 	root._screenGui = screenGui
 	root._theme = theme
+	root._references = {}
 	root._isRoot = true
 	screenGui.Parent = parent
 	return root

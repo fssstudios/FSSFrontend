@@ -10,7 +10,8 @@ SettingsGUI:Subdivide("H", 2)
 SettingsGUI[1]:Subdivide("V", 2)
 
 SettingsGUI[1][2]:Text("Bottom-left")
-SettingsGUI[2]:Button("Save", function(button)
+SettingsGUI[2]:Reference("SaveButton")
+SettingsGUI.SaveButton:Button("Save", function(button)
 	print(button.Name)
 end)
 ```
@@ -117,6 +118,41 @@ local workspace = region:Get(2)
 local children = region:GetChildren() -- a copy of the child array
 print(workspace:GetPath()) -- for example, root[2]
 ```
+
+### Named references
+
+Call `Reference(name)` on any subdivision to expose it as a named property of the root UI:
+
+```luau
+GUI[1][2][3][2][1]:Reference("StartButton")
+
+GUI.StartButton:Button("Start", function()
+	print("Starting")
+end)
+```
+
+`Reference` returns the same region, so it can be chained:
+
+```luau
+GUI[1][2]:Reference("StatusPanel"):Text("Ready")
+```
+
+Reference names must be non-empty strings and cannot conflict with region methods or internal root fields. A name can point to only one region, although one region may have multiple names. Use a valid Luau identifier when accessing a reference with dot syntax; any string can be accessed with brackets:
+
+```luau
+GUI[2]:Reference("player-actions")
+GUI["player-actions"]:List("Buttons", { "Kick", "Teleport" })
+```
+
+References can also be retrieved or removed explicitly:
+
+```luau
+local startRegion = GUI:GetReference("StartButton")
+startRegion:Unreference("StartButton") -- remove one name
+startRegion:Unreference() -- remove every name assigned to this region
+```
+
+References remain valid when their region's contents are replaced. They are removed automatically if the referenced region or one of its ancestors is destroyed or subdivided.
 
 ## Controls
 
@@ -410,7 +446,8 @@ end)
 SettingsGUI[2][3]:Dropdown({ "Low", "Medium", "High", "Ultra" }, function(value)
 	print("Quality:", value)
 end, { Value = "High" })
-SettingsGUI[2][4]:Button("Save settings", function()
+SettingsGUI[2][4]:Reference("SaveButton")
+SettingsGUI.SaveButton:Button("Save settings", function()
 	print("Saved")
 end)
 ```
@@ -434,6 +471,9 @@ The same example is available as `examples/Settings.client.luau` and is included
 | `region[index]`, `region:Get(index)` | Gets one child region |
 | `region:GetChildren()` | Returns a copy of all child regions |
 | `region:GetPath()` | Returns a readable indexed path |
+| `region:Reference(name)` | Exposes the region as `root[name]` / `root.Name` |
+| `root:GetReference(name)` | Gets a named region explicitly |
+| `region:Unreference(name?)` | Removes one or all names for the region |
 | `region:GetInstance()` | Returns the backing `Frame` |
 | `region:GetGui()` | Returns the root `ScreenGui` |
 | `region:Style(properties)` | Sets backing-frame properties |
