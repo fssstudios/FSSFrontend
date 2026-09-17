@@ -224,12 +224,16 @@ local function nodeIndex(self, key)
 	if type(key) == "number" then
 		return self._children[key]
 	end
+	if key == "Parent" then
+		return rawget(self, "_parent")
+	end
 	local method = Node[key]
 	if method ~= nil then
 		return method
 	end
-	if self.Parent == nil then
-		return self._references[key]
+	if rawget(self, "_parent") == nil then
+		local references = rawget(self, "_references")
+		return if references then references[key] else nil
 	end
 	return nil
 end
@@ -237,7 +241,7 @@ end
 local function newNode(root, parentNode, frame, surface)
 	local object = setmetatable({
 		Gui = frame,
-		Parent = parentNode,
+		_parent = parentNode,
 		_root = root,
 		_children = {},
 		_components = {},
@@ -337,6 +341,7 @@ function Node:Reference(name)
 
 	local root = self._root
 	assert(Node[name] == nil, string.format("FSSFrontend: reference name %q conflicts with a region method", name))
+	assert(name ~= "Parent", 'FSSFrontend: reference name "Parent" is reserved')
 	assert(
 		rawget(root, name) == nil,
 		string.format("FSSFrontend: reference name %q conflicts with an internal field", name)
