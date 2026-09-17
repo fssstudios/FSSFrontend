@@ -348,10 +348,9 @@ function Node:Reference(name)
 	)
 
 	local existing = root._references[name]
-	assert(
-		existing == nil or existing == self,
-		string.format("FSSFrontend: reference name %q is already assigned to %s", name, existing:GetPath())
-	)
+	if existing ~= nil and existing ~= self then
+		error(string.format("FSSFrontend: reference name %q is already assigned to %s", name, existing:GetPath()), 2)
+	end
 	root._references[name] = self
 	self._referenceNames[name] = true
 	return self
