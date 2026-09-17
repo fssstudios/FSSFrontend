@@ -1,0 +1,22 @@
+# Roblox Studio / Rojo output
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+*.rbxl.lock
+sourcemap.json
+
+# Package managers
+Packages/
+DevPackages/
+
+# Tooling and OS files
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Secrets
+.env
+.env.*
+!.env.example

@@ -1,0 +1,21 @@
+{
+  "name": "FSSFrontend",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "FSSFrontend": {
+        "$path": "src"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "FSSFrontendExample": {
+          "$path": "examples/Settings.client.luau"
+        }
+      }
+    }
+  }
+}
